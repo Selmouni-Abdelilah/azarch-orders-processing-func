@@ -1,0 +1,82 @@
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+- feature/*
+
+variables:
+  CosmosDBConnection: $(CosmosDBConnection) 
+  StorageConnectionString: $(StorageConnectionString)
+
+pool:
+  vmImage: windows-latest
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: Build
+    displayName: 'Build Job'
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: 'sdk'
+        version: '6.0'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Dotnet restore'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'config'
+        nugetConfigPath: 'NuGet.config'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Dotnet build'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(BuildConfiguration) --no-restore'
+
+    - task: DotNetCoreCLI@2
+      displayName: Publish
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '**/*.csproj'
+        arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory) --no-restore'
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish pipeline artifacts
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+        artifact: 'package'
+        publishLocation: 'pipeline'
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: Deploy
+    displayName: 'Deploy Job'
+    steps:
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        buildType: 'current'
+        artifactName: 'package'
+        targetPath: '$(Build.ArtifactStagingDirectory)'
+
+    - task: AzureFunctionApp@2
+      env:
+        CosmosDBConnection: $(CosmosDBConnection) 
+        StorageConnectionString: $(StorageConnectionString)
+      inputs:
+        connectedServiceNameARM: 'HFZUR-MOHAM-OTLK (1dabcf09-861c-4374-aebf-d63be509564b)'
+        appType: 'functionAppLinux'
+        appName: 'azarch-function-app'
+        package: '$(System.DefaultWorkingDirectory)/*.zip'
+        runtimeStack: 'DOTNET|6.0'
+        appSettings: '-CosmosDBConnection $(CosmosDBConnection) -StorageConnectionString $(StorageConnectionString)'
+        deploymentMethod: 'runFromPackage'
