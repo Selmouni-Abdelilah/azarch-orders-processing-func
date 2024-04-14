@@ -73,7 +73,7 @@ stages:
         CosmosDBConnection: $(CosmosDBConnection) 
         StorageConnectionString: $(StorageConnectionString)
       inputs:
-        connectedServiceNameARM: 'HFZUR-MOHAM-OTLK (1dabcf09-861c-4374-aebf-d63be509564b)'
+        connectedServiceNameARM: 'svc-conn-to-azure'
         appType: 'functionAppLinux'
         appName: 'azarch-function-app'
         package: '$(System.DefaultWorkingDirectory)/*.zip'
