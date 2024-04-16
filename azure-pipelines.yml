@@ -62,7 +62,7 @@ stages:
       inputs:
         buildType: 'current'
         artifactName: 'package'
-        targetPath: '$(Build.ArtifactStagingDirectory)'
+        targetPath: '$(System.DefaultWorkingDirectory)'
 
     - task: AzureFunctionApp@2
       inputs:
