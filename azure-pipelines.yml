@@ -5,10 +5,6 @@ trigger:
 - main
 - feature/*
 
-variables:
-  CosmosDBConnection: $(CosmosDBConnection) 
-  StorageConnectionString: $(StorageConnectionString)
-
 pool:
   vmImage: windows-latest
 
@@ -69,9 +65,6 @@ stages:
         targetPath: '$(Build.ArtifactStagingDirectory)'
 
     - task: AzureFunctionApp@2
-      env:
-        CosmosDBConnection: $(CosmosDBConnection) 
-        StorageConnectionString: $(StorageConnectionString)
       inputs:
         connectedServiceNameARM: 'svc-conn-to-azure'
         appType: 'functionAppLinux'
